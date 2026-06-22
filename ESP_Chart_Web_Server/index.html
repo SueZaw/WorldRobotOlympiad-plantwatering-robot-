@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <style>
+    body {
+      min-width: 310px;
+      max-width: 800px;
+      height: 400px;
+      margin: 0 auto;
+    }
+    h2 {
+      font-family: Arial;
+      font-size: 2.5rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2>Soil Moisture Data</h2>
+  <div id="chart-soil-moisture" class="container"></div>
+</body>
+<script>
+var chartSoilMoisture = new Highcharts.Chart({
+  chart: { renderTo: 'chart-soil-moisture' },
+  title: { text: 'Soil Moisture Level' },
+  series: [{
+    showInLegend: false,
+    data: []
+  }],
+  plotOptions: {
+    line: {
+      animation: false,
+      dataLabels: { enabled: true }
+    },
+    series: { color: '#059e8a' }
+  },
+  xAxis: {
+    type: 'datetime',
+    dateTimeLabelFormats: { second: '%H:%M:%S' }
+  },
+  yAxis: {
+    title: { text: 'Soil Moisture (%)' },
+    min: 0,  // Set minimum percentage
+    max: 100 // Set maximum percentage
+  },
+  credits: { enabled: false }
+});
+
+// Function to normalize the soil moisture data from 0-530 to 0-100%
+function normalizeMoistureLevel(value) {
+  var minValue = 0;
+  var maxValue = 530;
+  return Math.min(Math.max(((value - minValue) / (maxValue - minValue)) * 100, 0), 100);
+}
+
+setInterval(function () {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var x = (new Date()).getTime(),
+          sensorValue = parseFloat(this.responseText),
+          y = normalizeMoistureLevel(sensorValue);  // Normalize the value
+      if (chartSoilMoisture.series[0].data.length > 40) {
+        chartSoilMoisture.series[0].addPoint([x, y], true, true, true);
+      } else {
+        chartSoilMoisture.series[0].addPoint([x, y], true, false, true);
+      }
+    }
+  };
+  xhttp.open("GET", "/soil", true);
+  xhttp.send();
+}, 1000); // Update every 1 second
+</script>
+</html>
